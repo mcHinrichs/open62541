@@ -8,7 +8,7 @@
  * IMPORTANT ANNOUNCEMENT
  * The PubSub Subscriber API is currently not finished. This example can be used
  * to receive and display values that are published by tutorial_pubsub_publish
- * example in the TargetVariables of Subscriber Information Model .
+ * example in the TargetVariables of Subscriber Information Model.
  */
 #include <open62541/plugin/log_stdout.h>
 #include <open62541/plugin/pubsub_udp.h>
