@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. 
  *
  *    Copyright 2019 (c) Fraunhofer IOSB (Author: Julius Pfrommer)
+ *    Copyright 2019 (c) HMS Industrial Networks AB (Author: Jonas Green)
  */
 
 #include <open62541/server_config.h>
@@ -18,6 +19,11 @@ UA_ServerConfig_clean(UA_ServerConfig *config) {
 #ifdef UA_ENABLE_DISCOVERY_MULTICAST
     UA_MdnsDiscoveryConfiguration_clear(&config->discovery.mdns);
     UA_String_clear(&config->discovery.mdnsInterfaceIP);
+# if !defined(UA_HAS_GETIFADDR)
+    if (config->discovery.ipAddressListSize) {
+        UA_free(config->discovery.ipAddressList);
+    }
+# endif
 #endif
 
     /* Custom DataTypes */
