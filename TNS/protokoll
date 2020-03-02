@@ -1,0 +1,38 @@
+2019-09-24
+Entwicklungsumgebung CodeLite eingerichtet:
+sudo apt-get install codelite
+
+TSN Karte (enp3s0) eingerichtet:
+sudo apt install inxi
+inxi -SNxz
+grep '^CONFIG_NET_SCH_' /boot/config-$(uname -r)
+ifconfig enp3s0 192.168.5.6 netmask 255.255.255.0
+sudo ifconfig enp3s0 up
+ip a
+ifconfig
+sudo tc qdisc replace dev IFACE parent root handle 100 mqpriol2_tainum_tc 3 map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2l2_taiqueues 1@0 1@1 2@2 hw 0
+sudo tc qdisc add dev enp2s0 parent 100:1 etf offload clockid CLOCK_TAI delta 150000
+
+TSN Programm (unicast) heruntergeladen:
+https://gist.github.com/jeez/bd3afeff081ba64a695008dd8215866f
+klasse: l2_tai
+
+TSN Programm ausgeführt:
+gcc -pthread ./l2_tai.c -o l2_tai
+./l2_tai
+
+Programm für multicast: 
+alt: https://lwn.net/Articles/748744/
+---------------------------------------------------------------------------------------------------
+neu: https://gist.github.com/jeez/bd3afeff081ba64a695008dd8215866f
+sudo tc qdisc replace dev enp3s0 parent root handle 100 mqprio num_tc 3 map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2 queues 1@0 1@1 2@2 hw 0
+num_tc 3 = 3 qdisc's   map ist die prio zuweisung   wenn keine qdisc vorhanden dann FIFO
+
+früher tbs ist jetzt etf
+
+sudo tc qdisc replace dev enp3s0 parent 100:1 etf offload delta 300000 clockid CLOCK_TAI
+
+
+Paket schicken
+sudo ./udp_tai -i enp3s0 -t 2 -p 90 -D -d 600000  -b 1528320726000550000 -u 7798
+
