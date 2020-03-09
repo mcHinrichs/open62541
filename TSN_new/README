@@ -1,0 +1,24 @@
+Here we provide a testing application and scripts that can be used
+to exercise the SO_TXTIME APIs, the etf qdisc and the taprio qdisc.
+
+The example is based on a sample application (udp_tai.c) provided by
+Richard Cochran as part of the RFC v1 of SO_TXTIME. We've extended
+it in several ways so it may be used as an example of different
+setups: per-packet Tx time only based systems, per-port Time-aware
+scheduler, and a combination of those.
+
+The documentation is split into 2 README files:
+
+ - README.etf: Provides instructions for how to setup an example to
+               use etf standalone. In other words, only Time-based
+               transmission is used.
+
+ - README.taprio: Provides instructions for how to setup an example
+                  to use etf and taprio together. That means using
+                  a Time-aware scheduler (i.e. 802.1Qbv) in conjunction
+                  time-based transmission for fine-grained control over
+                  the Tx time of packets.
+
+A custom tool known as 'dump-classifier' was developed so we can
+verify if a taprio schedule is being respected. For more information
+please check README.classifier .

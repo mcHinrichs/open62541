@@ -1,0 +1,77 @@
+To help analyze taprio scheduling characteristics, we've developed a custom
+tool called 'dump-classifier'.
+
+
+dump-classifier
+===============
+
+dump-classifier aims to ease the test/verification of how well an
+implementation runs 802.1Qbv-like schedules.
+
+
+How to compile
+--------------
+
+* Dependencies:
+
+  - libpcap-dev
+
+
+Just running 'make' should work, if all the dependencies are met:
+
+$ make
+
+
+How to run
+----------
+
+$ ./dump-classifier -s <BATCH FILE> -f <FILTER FILE> -d <DUMP FILE>
+
+<BATCH FILE> is a text file containg a batch file intended for use
+with 'tc -batch', this allows dump-classifier to use the same file
+used for configuring the qdiscs.
+
+Example:
+-----<cut
+qdisc replace dev enp3s0 parent root handle 100 taprio \
+      num_tc 3 \
+      map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2 \
+      queues 1@0 1@1 2@2 \
+      base-time 1536883100000000000 \
+      sched-entry S 01 300000 \
+      sched-entry S 02 300000 \
+      sched-entry S 04 400000 \
+      clockid CLOCK_TAI
+
+qdisc replace dev enp3s0 parent 100:1 etf \
+      offload delta 300000 clockid CLOCK_TAI
+
+qdisc replace dev enp3s0 parent 100:2 etf clockid CLOCK_TAI \
+      delta 300000 offload deadline_mode
+----->end
+
+<FILTER FILE> allows different traffic classes to be indentified in a
+pcap dump file, it has the following format is contains a traffic
+class name and a pcap expression on each line, any traffic class that
+doesn't have a filter associated will be classified as "BE" (best
+effort). The order is important, as the first line will match the
+first traffic class (bit 0) in the gatemask parameter (the second
+field of each line of the schedule file), the second line will match
+the second traffic class (bit 1), and so on.
+
+Example:
+-----<cut
+talker :: ether dst aa:aa:aa:aa:aa:aa
+----->end
+
+<BASE TIME> an absolute time in nanoseconds where the schedule
+started, if that time is before the timestamp of the first packet in
+the <DUMP FILE>, the schedule will run until it reaches that
+timestamp, packets that have a timestamp before basetime will be
+ignored.
+
+<DUMP FILE> is a dump file captured via tcpdump, with timestamp
+precision in nanoseconds, so captured using something like this:
+
+$ tcpdump -j adapter_unsynced --time-stamp-precision=nanos -i enp2s0 -w dump.pcap
+
