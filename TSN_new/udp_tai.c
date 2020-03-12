@@ -54,7 +54,7 @@
 #define DEFAULT_PRIORITY	3
 #define MCAST_IPADDR		"239.1.1.1"
 #define UDP_PORT		7788
-#define MARKER			'a'
+#define MARKER			'b'
 
 #ifndef SO_TXTIME
 #define SO_TXTIME		61
