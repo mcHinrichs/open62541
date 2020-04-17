@@ -10,7 +10,7 @@
  *    Copyright 2017 (c) Stefan Profanter, fortiss GmbH
  *    Copyright 2017-2018 (c) Mark Giraud, Fraunhofer IOSB
  *    Copyright 2019 (c) Kalycito Infotech Private Limited
- *    Copyright 2018-2019 (c) HMS Industrial Networks AB (Author: Jonas Green)
+ *    Copyright 2018-2020 (c) HMS Industrial Networks AB (Author: Jonas Green)
  */
 
 #include "ua_services.h"
@@ -495,7 +495,6 @@ void
 Service_ActivateSession(UA_Server *server, UA_SecureChannel *channel,
                         UA_Session *session, const UA_ActivateSessionRequest *request,
                         UA_ActivateSessionResponse *response) {
-    UA_LOG_DEBUG_SESSION(&server->config.logger, session, "Execute ActivateSession");
     UA_LOCK_ASSERT(server->serviceMutex, 1);
 
     /* The Session was not bound to this SecureChannel. It could be that we want
@@ -507,12 +506,15 @@ Service_ActivateSession(UA_Server *server, UA_SecureChannel *channel,
      * calls to ActivateSession may be associated with different
      * SecureChannels. */
     if(!session) {
+        UA_LOG_INFO(&server->config.logger, UA_LOGCATEGORY_SESSION, "Execute ActivateSession: Session not bound to this secure channel");
         session = getSessionByToken(server, &request->requestHeader.authenticationToken);
         if(!session || !session->activated) {
             response->responseHeader.serviceResult = UA_STATUSCODE_BADSESSIONIDINVALID;
             goto rejected;
         }
     }
+
+    UA_LOG_DEBUG_SESSION(&server->config.logger, session, "Execute ActivateSession");
 
     /* Has the session timed out? */
     if(session->validTill < UA_DateTime_nowMonotonic()) {
@@ -674,10 +676,12 @@ Service_ActivateSession(UA_Server *server, UA_SecureChannel *channel,
         goto rejected;
     }
 
-    if(session->header.channel && session->header.channel != channel) {
-        UA_LOG_INFO_SESSION(&server->config.logger, session, "ActivateSession: Detach old channel");
-        /* Detach the old SecureChannel and attach the new */
-        UA_Session_detachFromSecureChannel(session);
+    /* Attach the session to the currently used channel if the session isn't
+     * attached to a channel or if the session is activated on a different
+     * channel than it is attached to. */
+    if(!session->header.channel || session->header.channel != channel) {
+        UA_LOG_INFO_SESSION(&server->config.logger, session, "ActivateSession: Attach to new channel");
+        /* Attach the new SecureChannel, the old channel will be detached if present */
         UA_Session_attachToSecureChannel(session, channel);
     }
 

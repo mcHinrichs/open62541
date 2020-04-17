@@ -19,9 +19,10 @@
 #include <open62541/types_generated_handling.h>
 
 #include "ua_util_internal.h"
-
 #include "libc_time.h"
 #include "pcg_basic.h"
+
+#define UA_MAX_ARRAY_DIMS 100 /* Max dimensions of an array */
 
 /* Datatype Handling
  * -----------------
@@ -152,6 +153,12 @@ QualifiedName_copy(const UA_QualifiedName *src, UA_QualifiedName *dst, const UA_
 static void
 QualifiedName_clear(UA_QualifiedName *p, const UA_DataType *_) {
     String_clear(&p->name, NULL);
+}
+
+u32
+UA_QualifiedName_hash(const UA_QualifiedName *q) {
+    return UA_ByteString_hash(q->namespaceIndex,
+                              q->name.data, q->name.length);
 }
 
 UA_Boolean
@@ -618,6 +625,11 @@ computeStrides(const UA_Variant *v, const UA_NumericRange range,
     }
     UA_assert(dims_count > 0);
 
+    /* Upper bound of the dimensions for stack-allocation */
+    if(dims_count > UA_MAX_ARRAY_DIMS)
+        return UA_STATUSCODE_BADINTERNALERROR;
+    UA_UInt32 realmax[UA_MAX_ARRAY_DIMS];
+
     /* Test the integrity of the range and compute the max index used for every
      * dimension. The standard says in Part 4, Section 7.22:
      *
@@ -625,7 +637,6 @@ computeStrides(const UA_Variant *v, const UA_NumericRange range,
      * the bounds of the array. The Server shall return a partial result if some
      * elements exist within the range. */
     size_t count = 1;
-    UA_STACKARRAY(UA_UInt32, realmax, dims_count);
     if(range.dimensionsSize != dims_count)
         return UA_STATUSCODE_BADINDEXRANGENODATA;
     for(size_t i = 0; i < dims_count; ++i) {
@@ -1242,7 +1253,7 @@ readDimension(UA_Byte *buf, size_t buflen, UA_NumericRangeDimension *dim) {
 }
 
 UA_StatusCode
-UA_NumericRange_parseFromString(UA_NumericRange *range, const UA_String *str) {
+UA_NumericRange_parse(UA_NumericRange *range, const UA_String str) {
     size_t idx = 0;
     size_t dimensionsMax = 0;
     UA_NumericRangeDimension *dimensions = NULL;
@@ -1263,7 +1274,7 @@ UA_NumericRange_parseFromString(UA_NumericRange *range, const UA_String *str) {
         }
 
         /* read the dimension */
-        size_t progress = readDimension(&str->data[offset], str->length - offset,
+        size_t progress = readDimension(&str.data[offset], str.length - offset,
                                         &dimensions[idx]);
         if(progress == 0) {
             retval = UA_STATUSCODE_BADINDEXRANGEINVALID;
@@ -1273,10 +1284,10 @@ UA_NumericRange_parseFromString(UA_NumericRange *range, const UA_String *str) {
         ++idx;
 
         /* loop into the next dimension */
-        if(offset >= str->length)
+        if(offset >= str.length)
             break;
 
-        if(str->data[offset] != ',') {
+        if(str.data[offset] != ',') {
             retval = UA_STATUSCODE_BADINDEXRANGEINVALID;
             break;
         }
