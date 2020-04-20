@@ -8,16 +8,19 @@ Clone and install linuxptp version 2.0
     git checkout -f 059269d0cc50f8543b00c3c1f52f33a6c1aa5912
 Install application
     make
-    make install
-    cp configs/gPTP.cfg /etc/linuxptp/
+    sudo make install
+    sudo cp configs/gPTP.cfg /etc/linuxptp/
 
 To make node as ptp master run the following command (say in node1):
-    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/ptp4l.log -e /var/log/ptp4l.err.log /usr/bin/taskset -c 1 chrt 90 /usr/local/sbin/ptp4l -i <I210 interface> -2 -mq -f /etc/linuxptp/gPTP.cfg --step_threshold=1 --fault_reset_interval=0 --announceReceiptTimeout=10
+    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/ptp4l.log -e /var/log/ptp4l.err.log /usr/bin/taskset -c 1 chrt 90 /usr/local/sbin/ptp4l -i enp3s0 -2 -mq -f /etc/linuxptp/gPTP.cfg --step_threshold=1 --fault_reset_interval=0 --announceReceiptTimeout=10
 To make node as ptp slave run the following command (say in node2):
-    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/ptp4l.log -e /var/log/ptp4l.err.log /usr/bin/taskset -c 1 chrt 90 /usr/local/sbin/ptp4l -i <I210 interface> -2 -mq -s -f /etc/linuxptp/gPTP.cfg --step_threshold=1 --fault_reset_interval=0 --announceReceiptTimeout=10
-To ensure phc2sys synchronization (in both nodes, node1 and node2):
+    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/ptp4l.log -e /var/log/ptp4l.err.log /usr/bin/taskset -c 1 chrt 90 /usr/local/sbin/ptp4l -i enp0s31f6 -2 -mq -s -f /etc/linuxptp/gPTP.cfg --step_threshold=1 --fault_reset_interval=0 --announceReceiptTimeout=10
+To ensure phc2sys synchronization (in both nodes, node1):
     sudo pmc -u -b 0 -t 1 "SET GRANDMASTER_SETTINGS_NP clockClass 248 clockAccuracy 0xfe offsetScaledLogVariance 0xffff currentUtcOffset 37 leap61 0 leap59 0 currentUtcOffsetValid 1 ptpTimescale 1 timeTraceable 1 frequencyTraceable 0 timeSource 0xa0"
-    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/phc2sys.log -e /var/log/phc2sys.err.log /usr/bin/taskset -c 1 chrt 89 /usr/local/sbin/phc2sys -s <I210 interface> -c CLOCK_REALTIME --step_threshold=1 -w -m
+    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/phc2sys.log -e /var/log/phc2sys.err.log /usr/bin/taskset -c 1 chrt 89 /usr/local/sbin/phc2sys -s enp0s31f6 -c CLOCK_REALTIME --step_threshold=1 -w -m
+node2:
+    sudo pmc -u -b 0 -t 1 "SET GRANDMASTER_SETTINGS_NP clockClass 248 clockAccuracy 0xfe offsetScaledLogVariance 0xffff currentUtcOffset 37 leap61 0 leap59 0 currentUtcOffsetValid 1 ptpTimescale 1 timeTraceable 1 frequencyTraceable 0 timeSource 0xa0"
+    sudo daemonize -E BUILD_ID=dontKillMe -o /var/log/phc2sys.log -e /var/log/phc2sys.err.log /usr/bin/taskset -c 1 chrt 89 /usr/local/sbin/phc2sys -s enp3s0 -c CLOCK_REALTIME --step_threshold=1 -w -m
 
 Check if ptp4l and phc2sys are running
     ptp4l log in /var/log/ptp4l.log
@@ -121,7 +124,7 @@ If MAC address is changed, follow INGRESS POLICY steps with dst_mac address to b
 
 To write the published counter data along with timestamp in csv uncomment #define UPDATE_MEASUREMENTS in pubsub_TSN_publisher.c and pubsub_TSN_loopback.c applications
 
-NOTE: The CSV files will be generated in the build directory containing the timestamp and counter values for benchmarking only after terminating both the applications using “Ctrl + C”
+NOTE: The CSV files will be generated in the build directory containing the timestamp and counter values for benchmarking only after terminating both the applications using \93Ctrl + C\94
 
 To increase the payload size, change the REPEATED_NODECOUNTS macro in pubsub_TSN_publisher.c and pubsub_TSN_loopback.c applications (for 1 REPEATED_NODECOUNTS, 8 bytes of data will increase in payload)
 Eg: To increase the payload to 64 bytes, change REPEATED_NODECOUNTS to 4
