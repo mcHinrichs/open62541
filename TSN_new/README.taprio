@@ -63,6 +63,7 @@ The same can be done for ingress.
 # TALKER #
     1) Setup network
         sudo ip addr add 192.168.0.77/4 broadcast 192.168.0.255 dev enp3s0
+	
 
     2) Setup qdiscs
 
@@ -98,6 +99,8 @@ The same can be done for ingress.
             - gates.sched is used as schedule file;
             - the reference clock is CLOCK_TAI;
 
+		bessere Erklärung: Packets belonging to traffic class 0 go into 1 queue at offset 0 (i.e queue index 0 or Q0), packet from traffic class 1 go into 1 queue at offset 1 (i.e. queue index 1 or Q1), and packets from traffic class 2 go into 2 queues at offset 2 (i.e. queues index 2 and 3, or Q2 and Q3);
+
 
       2.2) Setup etf for queue TC 0:
 
@@ -112,11 +115,16 @@ The same can be done for ingress.
 
 
     3) Start time sync (ptp slave):
-        sudo ./setup_clock_sync.sh -i enp3s0 -s -v
+        sudo ./setup_clock_sync.sh -i enp3s0 -s -v     
+	Edit: sudo ./setup_clock_sync.sh -i enp3s0 -M   für einen Rechner
 
 
     4) Start iperf3 client:
-        iperf3 -c 192.168.0.78 -t 600 --fq-rate 100M                EDIT:-b statt --fq-rate
+        iperf3 -c 192.168.0.78 -t 600 --fq-rate 100M                
+	EDIT: iperf3 -c 192.168.0.78 -t 600 -b 100M
+			ERROR: iperf3: error - unable to connect to server: No route to host
+			Lösung: Server beim Listerner zuerst starten: iperf3 -s
+
 
 
     5) Start udp_tai for TC 0. Use a base-time starting in 1min from now + a
