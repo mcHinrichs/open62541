@@ -1,0 +1,11 @@
+qdisc replace dev enp3s0 parent root handle 100 mqprio \
+      num_tc 3 \
+      map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2 \
+      queues 1@0 1@1 2@2 \
+      hw 0
+
+qdisc replace dev enp3s0 parent 100:1 etf \
+      offload delta 300000 clockid CLOCK_TAI
+
+qdisc replace dev enp3s0 parent 100:2 etf clockid CLOCK_TAI \
+      delta 300000 offload deadline_mode
