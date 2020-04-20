@@ -141,11 +141,11 @@ The same can be done for ingress.
 
 # LISTENER #
     1) Setup network
-        sudo ip addr add 192.168.0.78/4 broadcast 192.168.0.255 dev enp3s0
+        sudo ip addr add 192.168.0.78/4 broadcast 192.168.0.255 dev enp0s3
 
 
     2) Start time sync (ptp master)
-        sudo ./setup_clock_sync.sh -i enp3s0 -m -v
+        sudo ./setup_clock_sync.sh -i enp0s3 -m -v
 
 
     3) Start iperf server
@@ -163,7 +163,7 @@ The same can be done for ingress.
 
 
         --taprio.batch--
-        qdisc replace dev enp3s0 parent root handle 100 taprio \
+        qdisc replace dev enp0s3 parent root handle 100 taprio \
                 num_tc 3 \
                 map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2 \
                 queues 1@0 1@1 2@2 \
@@ -173,15 +173,15 @@ The same can be done for ingress.
                 sched-entry S 04 400000 \
                 clockid CLOCK_TAI
 
-        qdisc replace dev enp3s0 parent 100:1 etf \
+        qdisc replace dev enp0s3 parent 100:1 etf \
                 offload delta 300000 clockid CLOCK_TAI
 
-        qdisc replace dev enp3s0 parent 100:2 etf clockid CLOCK_TAI \
+        qdisc replace dev enp0s3 parent 100:2 etf clockid CLOCK_TAI \
                 delta 300000 offload deadline_mode
 
     5) Start capturing traffic:
 
-        sudo tcpdump -c 600000 -i enp3s0 -w tmp.pcap -j adapter_unsynced \
+        sudo tcpdump -c 600000 -i enp0s3 -w tmp.pcap -j adapter_unsynced \
           -tt --time-stamp-precision=nano
 
     6) Use the talkers to transmit packets as described on the next section.
